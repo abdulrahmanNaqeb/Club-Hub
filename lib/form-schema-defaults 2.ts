@@ -19,32 +19,8 @@ export interface FormField {
   helpText?: string;
 }
 
-// Reserved: CLUB_APPLICATION schemas must always carry a field with this
-// fieldKey. If a union edits the schema and removes it, submission falls
-// back to the submitter's own Clerk email rather than blocking (see
-// lib/get-proposed-admin-email.ts).
-export const PROPOSED_ADMIN_EMAIL_FIELD_KEY = "proposedAdminEmail";
-
-// Reserved: the club application queue reads this key out of `answers` to
-// show a club name in the list without joining back to the schema, and the
-// approve route uses the same value to set both the new Clerk org's name
-// and Club.name (one source of truth for the club's display name at
-// creation time). This is a required field that must always be present in
-// CLUB_APPLICATION schemas. If a union deletes this field, the approval
-// flow will fail when attempting to create the Club (no fallback to
-// placeholder labels).
-export const CLUB_NAME_FIELD_KEY = "club_name";
-
-// Reserved: event approval requires a title for the Event it creates on
-// approval. This is a required field that must always be present in
-// EVENT_APPROVAL schemas. Unlike CLUB_NAME_FIELD_KEY with a fallback admin
-// email, there is no alternative source of truth for an event title. If a
-// union deletes this field, the approval flow will fail when attempting to
-// set Event.title (no fallback to placeholder title).
-export const EVENT_NAME_FIELD_KEY = "eventName";
-
 const CLUB_APPLICATION_DEFAULTS: FormField[] = [
-  { fieldKey: CLUB_NAME_FIELD_KEY, label: "Club name", type: "TEXT", required: true },
+  { fieldKey: "club_name", label: "Club name", type: "TEXT", required: true },
   {
     fieldKey: "description",
     label: "Description",
@@ -65,7 +41,7 @@ const CLUB_APPLICATION_DEFAULTS: FormField[] = [
     required: true,
   },
   {
-    fieldKey: PROPOSED_ADMIN_EMAIL_FIELD_KEY,
+    fieldKey: "proposed_admin_email",
     label: "Proposed admin email",
     type: "TEXT",
     required: true,
@@ -79,7 +55,7 @@ const CLUB_APPLICATION_DEFAULTS: FormField[] = [
 ];
 
 const EVENT_APPROVAL_DEFAULTS: FormField[] = [
-  { fieldKey: EVENT_NAME_FIELD_KEY, label: "Event name", type: "TEXT", required: true },
+  { fieldKey: "event_name", label: "Event name", type: "TEXT", required: true },
   { fieldKey: "date", label: "Date", type: "DATE", required: true },
   { fieldKey: "location", label: "Location", type: "TEXT", required: true },
   {
@@ -138,13 +114,19 @@ export async function getOrSeedFormSchema(
   institution: Institution,
   formType: FormType
 ) {
-  return prisma.formSchema.upsert({
+  const existing = await prisma.formSchema.findUnique({
     where: { institutionId_formType: { institutionId: institution.id, formType } },
-    create: {
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  return prisma.formSchema.create({
+    data: {
       institutionId: institution.id,
       formType,
       fields: getDefaultFields(formType) as unknown as object,
     },
-    update: {},
   });
 }

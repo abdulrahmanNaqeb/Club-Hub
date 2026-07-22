@@ -7,6 +7,7 @@ enum ApprovalStatus {
 model Club {
   id                       String         @id @default(cuid())
   clerkOrgId               String         @unique
+  name                     String
   approvalStatus           ApprovalStatus @default(PENDING)
   description              String?
   baselineBudgetAmount     Decimal
