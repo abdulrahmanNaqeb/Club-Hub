@@ -24,7 +24,7 @@ export function AppNavbar({ title }: AppNavbarProps) {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <span className="text-sm font-semibold text-copy-primary">
+        <span className="text-3xl font-semibold text-copy-primary">
           {title}
         </span>
       </div>

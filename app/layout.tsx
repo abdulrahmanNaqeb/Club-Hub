@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/ui/themes";
 import "./globals.css";
 
-const geistSans = { variable: "--font-geist-sans" };
-const geistMono = { variable: "--font-geist-mono" };
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -19,7 +29,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ClerkProvider
@@ -39,8 +49,8 @@ export default function RootLayout({
               colorDanger: "var(--state-error)",
               colorSuccess: "var(--state-success)",
               colorWarning: "var(--state-warning)",
-              fontFamily: "var(--font-geist-sans)",
-              fontFamilyMono: "var(--font-geist-mono)",
+              fontFamily: "var(--font-sans)",
+              fontFamilyMono: "var(--font-mono)",
               borderRadius: "0.625rem",
             },
           }}

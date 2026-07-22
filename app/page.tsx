@@ -15,7 +15,7 @@ export default function Home() {
   return (
     <AppShellProvider>
       <div className="flex h-screen bg-page">
-        <AppSidebar />
+        <AppSidebar mode="club" />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <AppNavbar title="Team" />

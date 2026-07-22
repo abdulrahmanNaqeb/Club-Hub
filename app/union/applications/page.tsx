@@ -2,18 +2,18 @@ import { requireOrgMode } from "@/lib/get-org-mode";
 import { AppShell } from "@/components/app/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default async function TeamPage() {
-  await requireOrgMode("club");
+export default async function UnionApplicationsPage() {
+  await requireOrgMode("union");
 
   return (
-    <AppShell mode="club" title="Team">
+    <AppShell mode="union" title="Applications">
       <Card className="max-w-lg">
         <CardHeader>
-          <CardTitle>Team</CardTitle>
+          <CardTitle>Applications</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-copy-secondary">
-            Member list and roles will live here.
+            Club applications awaiting review will live here.
           </p>
         </CardContent>
       </Card>
