@@ -1,0 +1,12 @@
+model BrainstormIdea {
+  id        String   @id @default(cuid())
+  text      String
+  voteCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  club   Club   @relation(fields: [clubId], references: [id])
+  clubId String
+
+  @@index([clubId])
+}

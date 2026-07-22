@@ -1,0 +1,42 @@
+enum BudgetEntryType {
+  INCOME
+  EXPENSE
+}
+
+model BudgetCategory {
+  id              String   @id @default(cuid())
+  name            String
+  allocatedAmount Decimal
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  club   Club   @relation(fields: [clubId], references: [id])
+  clubId String
+
+  budgetEntries BudgetEntry[]
+
+  @@index([clubId])
+}
+
+model BudgetEntry {
+  id          String          @id @default(cuid())
+  amount      Decimal
+  type        BudgetEntryType
+  note        String?
+  date        DateTime
+  receiptUrls String[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  club   Club   @relation(fields: [clubId], references: [id])
+  clubId String
+
+  category   BudgetCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId String?
+
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  eventId String?
+
+  @@index([clubId])
+  @@index([clubId, date])
+}

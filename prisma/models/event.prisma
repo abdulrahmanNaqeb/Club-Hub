@@ -1,0 +1,41 @@
+enum EventStatus {
+  IDEA
+  PLANNING
+  CONFIRMED
+  DONE
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  status      EventStatus @default(IDEA)
+  dateTime    DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  club   Club   @relation(fields: [clubId], references: [id])
+  clubId String
+
+  tasks                 EventTask[]
+  budgetEntries         BudgetEntry[]
+  eventApprovalRequests EventApprovalRequest[]
+
+  @@index([clubId])
+  @@index([clubId, status])
+}
+
+model EventTask {
+  id        String   @id @default(cuid())
+  title     String
+  assignee  String?
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+
+  @@index([eventId])
+}

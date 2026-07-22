@@ -1,0 +1,50 @@
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Club {
+  id                       String         @id @default(cuid())
+  clerkOrgId               String         @unique
+  approvalStatus           ApprovalStatus @default(PENDING)
+  description              String?
+  baselineBudgetAmount     Decimal
+  brainstormCanvasJsonPath String?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionId String
+
+  applications          ClubApplication[]
+  events                Event[]
+  eventApprovalRequests EventApprovalRequest[]
+  fundingRequests       FundingRequest[]
+  budgetCategories      BudgetCategory[]
+  budgetEntries         BudgetEntry[]
+  brainstormIdeas       BrainstormIdea[]
+
+  @@index([institutionId])
+  @@index([clerkOrgId])
+}
+
+model ClubApplication {
+  id                  String         @id @default(cuid())
+  answers             Json
+  schemaSnapshot      Json
+  status              ApprovalStatus @default(PENDING)
+  proposedAdminUserId String
+  proposedAdminEmail  String
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionId String
+
+  resultingClub   Club?   @relation(fields: [resultingClubId], references: [id])
+  resultingClubId String?
+
+  @@index([institutionId])
+  @@index([institutionId, status])
+}

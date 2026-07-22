@@ -1,0 +1,26 @@
+model Institution {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  unionStaffOrgLinks UnionStaffOrgLink[]
+  formSchemas        FormSchema[]
+  clubs              Club[]
+  clubApplications   ClubApplication[]
+
+  @@index([slug])
+}
+
+model UnionStaffOrgLink {
+  id         String   @id @default(cuid())
+  clerkOrgId String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionId String
+
+  @@index([institutionId])
+}

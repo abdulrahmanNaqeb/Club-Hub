@@ -1,0 +1,19 @@
+enum FormType {
+  CLUB_APPLICATION
+  EVENT_APPROVAL
+  FUNDING_REQUEST
+}
+
+model FormSchema {
+  id        String   @id @default(cuid())
+  formType  FormType
+  fields    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionId String
+
+  @@unique([institutionId, formType])
+  @@index([institutionId])
+}

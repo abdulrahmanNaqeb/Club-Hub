@@ -1,0 +1,33 @@
+model EventApprovalRequest {
+  id             String         @id @default(cuid())
+  answers        Json
+  schemaSnapshot Json
+  status         ApprovalStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  club   Club   @relation(fields: [clubId], references: [id])
+  clubId String
+
+  resultingEvent   Event?  @relation(fields: [resultingEventId], references: [id])
+  resultingEventId String?
+
+  @@index([clubId])
+  @@index([clubId, status])
+}
+
+model FundingRequest {
+  id             String         @id @default(cuid())
+  amount         Decimal
+  answers        Json
+  schemaSnapshot Json
+  status         ApprovalStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  club   Club   @relation(fields: [clubId], references: [id])
+  clubId String
+
+  @@index([clubId])
+  @@index([clubId, status])
+}
