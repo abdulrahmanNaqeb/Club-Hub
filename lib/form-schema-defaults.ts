@@ -108,8 +108,17 @@ const EVENT_APPROVAL_DEFAULTS: FormField[] = [
   },
 ];
 
+// Reserved: funding requests store the requested amount as its own Decimal
+// column (`FundingRequest.amount`), pulled from this key rather than living
+// only inside `answers`/`schemaSnapshot`, so approval can add it straight to
+// Club.baselineBudgetAmount without re-parsing form answers. This is a
+// required field that must always be present in FUNDING_REQUEST schemas.
+// Unlike CLUB_NAME_FIELD_KEY, there is no fallback — if a union deletes this
+// field, submission fails outright rather than guessing an amount.
+export const FUNDING_AMOUNT_FIELD_KEY = "amount";
+
 const FUNDING_REQUEST_DEFAULTS: FormField[] = [
-  { fieldKey: "amount", label: "Amount", type: "NUMBER", required: true },
+  { fieldKey: FUNDING_AMOUNT_FIELD_KEY, label: "Amount", type: "NUMBER", required: true },
   { fieldKey: "reason", label: "Reason", type: "TEXTAREA", required: true },
 ];
 
@@ -138,13 +147,70 @@ export async function getOrSeedFormSchema(
   institution: Institution,
   formType: FormType
 ) {
-  return prisma.formSchema.upsert({
+  const defaultFields = getDefaultFields(formType);
+
+  // Ensure a schema exists (create if missing)
+  const schema = await prisma.formSchema.upsert({
     where: { institutionId_formType: { institutionId: institution.id, formType } },
     create: {
       institutionId: institution.id,
       formType,
-      fields: getDefaultFields(formType) as unknown as object,
+      fields: defaultFields as unknown as object,
     },
     update: {},
   });
+
+  // Normalize only the reserved keys in existing schemas. This preserves
+  // any custom fields a union added while ensuring required reserved
+  // fields (and their types) are present and valid.
+  const fields = schema.fields as unknown as FormField[];
+  let changed = false;
+
+  // Helper to ensure a default field exists with required type/required flag
+  function ensureReserved(def: FormField) {
+    const idx = fields.findIndex((f) => f.fieldKey === def.fieldKey);
+    if (idx === -1) {
+      // missing -> insert at the front to keep defaults discoverable
+      fields.unshift(def);
+      changed = true;
+      return;
+    }
+
+    const existing = fields[idx];
+    // If the reserved key exists but the type/required don't match the
+    // canonical defaults, normalize them.
+    if (existing.type !== def.type || existing.required !== def.required) {
+      fields[idx] = { ...existing, type: def.type, required: def.required, label: def.label };
+      changed = true;
+    }
+  }
+
+  for (const def of defaultFields) {
+    // Only normalize the reserved fields we care about. For FUNDING_REQUEST
+    // we need to ensure `amount` is NUMBER and required.
+    if (formType === "FUNDING_REQUEST") {
+      if (def.fieldKey === FUNDING_AMOUNT_FIELD_KEY) ensureReserved(def);
+      continue;
+    }
+
+    if (formType === "CLUB_APPLICATION") {
+      if (def.fieldKey === CLUB_NAME_FIELD_KEY) ensureReserved(def);
+      continue;
+    }
+
+    if (formType === "EVENT_APPROVAL") {
+      if (def.fieldKey === EVENT_NAME_FIELD_KEY) ensureReserved(def);
+      continue;
+    }
+  }
+
+  if (changed) {
+    const updated = await prisma.formSchema.update({
+      where: { id: schema.id },
+      data: { fields: fields as unknown as object },
+    });
+    return updated;
+  }
+
+  return schema;
 }
