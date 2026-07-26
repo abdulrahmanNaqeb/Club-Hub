@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 
 import { DynamicForm } from "@/components/forms/dynamic-form"
@@ -18,12 +18,17 @@ export function RequestFundingForm({ fields }: RequestFundingFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [idempotencyKey] = useState(() =>
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  )
 
   function handleChange(fieldKey: string, value: unknown) {
     setAnswers((current) => ({ ...current, [fieldKey]: value }))
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSubmitError(null)
 
@@ -38,7 +43,7 @@ export function RequestFundingForm({ fields }: RequestFundingFormProps) {
       const response = await fetch("/api/budget/request-funding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers, idempotencyKey }),
       })
 
       if (!response.ok) {

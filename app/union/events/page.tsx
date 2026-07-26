@@ -35,5 +35,14 @@ export default async function UnionEventsPage() {
 
 function pickEventName(answers: FormAnswers): string {
   const value = answers[EVENT_NAME_FIELD_KEY];
-  return typeof value === "string" && value.trim() ? value.trim() : "Untitled event";
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  const legacyValue = answers["event_name"];
+  if (typeof legacyValue === "string" && legacyValue.trim()) {
+    return legacyValue.trim();
+  }
+
+  return "Untitled event";
 }

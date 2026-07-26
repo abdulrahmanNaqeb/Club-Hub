@@ -25,7 +25,7 @@ interface NavItem {
 
 const CLUB_NAV_ITEMS: NavItem[] = [
   { label: "Team", icon: Users, href: "/team" },
-  { label: "Events", icon: CalendarDays, disabled: true },
+  { label: "Events", icon: CalendarDays, href: "/events" },
   { label: "More", icon: LayoutGrid, disabled: true },
 ]
 

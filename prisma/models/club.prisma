@@ -25,9 +25,29 @@ model Club {
   budgetCategories      BudgetCategory[]
   budgetEntries         BudgetEntry[]
   brainstormIdeas       BrainstormIdea[]
+  overspendFlags        OverspendFlag[]
 
   @@index([institutionId])
   @@index([clerkOrgId])
+}
+
+model OverspendFlag {
+  id         String    @id @default(cuid())
+  flaggedAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  club   Club   @relation(fields: [clubId], references: [id])
+  clubId String
+
+  // Set to `clubId` while the flag is open and `null` once resolved. A plain
+  // `@@unique([clubId, resolvedAt])` wouldn't enforce "at most one open flag
+  // per club" — Postgres treats every NULL `resolvedAt` as distinct, so
+  // multiple resolved rows are fine, but this field's uniqueness is what
+  // actually blocks two simultaneously-open flags for the same club and
+  // gives the job's upsert a stable key to target.
+  openKey String? @unique
+
+  @@index([clubId])
 }
 
 model ClubApplication {

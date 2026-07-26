@@ -67,35 +67,47 @@ export async function POST(
 
   const answers = approvalRequest.answers as unknown as FormAnswers;
 
-  const event = await prisma.$transaction(async (tx) => {
-    // Atomically claim the approval request by conditioning the update on PENDING status
-    const claimResult = await tx.eventApprovalRequest.updateMany({
-      where: { id: approvalRequest.id, status: "PENDING" },
-      data: { status: "APPROVED" },
-    });
+  let event;
+  try {
+    event = await prisma.$transaction(async (tx) => {
+      // Atomically claim the approval request by conditioning the update on PENDING status
+      const claimResult = await tx.eventApprovalRequest.updateMany({
+        where: { id: approvalRequest.id, status: "PENDING" },
+        data: { status: "APPROVED" },
+      });
 
-    if (claimResult.count === 0) {
-      throw new Error("Approval request is no longer in PENDING state — already claimed or decided.");
+      if (claimResult.count === 0) {
+        throw new Error("Approval request is no longer in PENDING state — already claimed or decided.");
+      }
+
+      const createdEvent = await tx.event.create({
+        data: {
+          clubId: approvalRequest.clubId,
+          title: pickEventName(answers),
+          description: pickOptionalString(answers, "description") ?? null,
+          location: pickOptionalString(answers, "location") ?? null,
+          dateTime: pickDateTime(answers) ?? null,
+          status: "CONFIRMED",
+        },
+      });
+
+      await tx.eventApprovalRequest.update({
+        where: { id: approvalRequest.id },
+        data: { resultingEventId: createdEvent.id },
+      });
+
+      return createdEvent;
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("no longer in PENDING state")) {
+      return NextResponse.json(
+        { error: "This request has already been decided." },
+        { status: 409 }
+      );
     }
 
-    const createdEvent = await tx.event.create({
-      data: {
-        clubId: approvalRequest.clubId,
-        title: pickEventName(answers),
-        description: pickOptionalString(answers, "description") ?? null,
-        location: pickOptionalString(answers, "location") ?? null,
-        dateTime: pickDateTime(answers) ?? null,
-        status: "CONFIRMED",
-      },
-    });
-
-    await tx.eventApprovalRequest.update({
-      where: { id: approvalRequest.id },
-      data: { resultingEventId: createdEvent.id },
-    });
-
-    return createdEvent;
-  });
+    throw err;
+  }
 
   return NextResponse.json({ event });
 }

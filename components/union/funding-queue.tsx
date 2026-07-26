@@ -39,30 +39,17 @@ export function formatFundingAmount(amount: number): string {
 
 export function FundingQueue({ requests: initialRequests }: FundingQueueProps) {
   const router = useRouter()
-  const [requests, setRequests] = useState(initialRequests)
+  const [removedRequestIds, setRemovedRequestIds] = useState<string[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  const requests = initialRequests.filter((request) => !removedRequestIds.includes(request.id))
   const selected = requests.find((request) => request.id === selectedId) ?? null
 
   function handleDecided(requestId: string) {
-    setRequests((current) => current.filter((request) => request.id !== requestId))
+    setRemovedRequestIds((current) => [...current, requestId])
     setSelectedId(null)
     router.refresh()
   }
-
-  // Keep local state synchronized if the parent updates `initialRequests`.
-  // This allows `router.refresh()` or other data updates to be reflected
-  // without remounting the component.
-  useEffect(() => {
-    setRequests(initialRequests)
-    // If the previously selected request was removed externally,
-    // clear selection to avoid stale references.
-    if (selectedId && !initialRequests.find((r) => r.id === selectedId)) {
-      setSelectedId(null)
-    }
-    // We intentionally depend only on `initialRequests` here; local
-    // optimistic updates (handleDecided) continue to work.
-  }, [initialRequests])
 
   return (
     <>

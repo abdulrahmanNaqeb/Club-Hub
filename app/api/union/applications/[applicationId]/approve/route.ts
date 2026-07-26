@@ -75,25 +75,33 @@ export async function POST(
     return NextResponse.json({ error: "Application not found." }, { status: 404 });
   }
 
-  const body = await request.json();
-  const baselineBudgetAmount = parseBaselineBudgetAmount(body);
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid submission." }, { status: 400 })
+  }
+
+  const baselineBudgetAmount = parseBaselineBudgetAmount(body)
   if (baselineBudgetAmount === null) {
     return NextResponse.json(
       { error: "A valid baseline budget amount is required." },
       { status: 400 }
-    );
+    )
   }
 
-  const client = await clerkClient();
-  const clubName = pickClubName(application.answers as unknown as FormAnswers);
-
-  // Clerk org creation and the admin invitation can't participate in the
-  // Prisma transaction below — they're external API calls. If anything
-  // after this point fails, we attempt to delete the org we just created
-  // rather than leave an orphan (see architecture-context.md invariant 4).
-  const org = await client.organizations.createOrganization({ name: clubName });
+  const client = await clerkClient()
+  let org: { id: string } | null = null
 
   try {
+    const clubName = pickClubName(application.answers as unknown as FormAnswers)
+
+    // Clerk org creation and the admin invitation can't participate in the
+    // Prisma transaction below — they're external API calls. If anything
+    // after this point fails, we attempt to delete the org we just created
+    // rather than leave an orphan (see architecture-context.md invariant 4).
+    org = await client.organizations.createOrganization({ name: clubName })
+
     // No inviterUserId here: the reviewing union staff member belongs to
     // the Union Staff org, not this brand-new Club org, and Clerk's
     // createOrganizationInvitation rejects inviterUserId with a 403
@@ -120,7 +128,7 @@ export async function POST(
       const createdClub = await tx.club.create({
         data: {
           institutionId: institution.id,
-          clerkOrgId: org.id,
+          clerkOrgId: org!.id,
           name: clubName,
           approvalStatus: "APPROVED",
           baselineBudgetAmount,
@@ -138,16 +146,28 @@ export async function POST(
     return NextResponse.json({ club: { id: club.id, clerkOrgId: club.clerkOrgId } });
   } catch (err) {
     logApprovalError(
-      `Approval failed for application ${application.id} after creating Clerk org ${org.id} — cleaning up.`,
+      `Approval failed for application ${application.id}${org ? ` after creating Clerk org ${org.id}` : ""} — cleaning up.`,
       err
-    );
-    try {
-      await client.organizations.deleteOrganization(org.id);
-    } catch (cleanupErr) {
-      console.error(`Failed to clean up orphaned Clerk org ${org.id}:`, cleanupErr);
+    )
+
+    if (org) {
+      try {
+        await client.organizations.deleteOrganization(org.id)
+      } catch (cleanupErr) {
+        console.error(`Failed to clean up orphaned Clerk org ${org.id}:`, cleanupErr)
+      }
     }
 
-    // On transaction failure, attempt to restore the application to PENDING if it wasn't already transitioned
+    if (
+      err instanceof Error &&
+      err.message.includes(`Required field "${CLUB_NAME_FIELD_KEY}" is missing or empty`)
+    ) {
+      return NextResponse.json(
+        { error: "A valid club name is required." },
+        { status: 400 }
+      )
+    }
+
     if (
       err instanceof Error &&
       err.message.includes("no longer in PENDING state")
@@ -155,12 +175,12 @@ export async function POST(
       return NextResponse.json(
         { error: "This application has already been decided." },
         { status: 409 }
-      );
+      )
     }
 
     return NextResponse.json(
       { error: "Approval failed. No changes were made." },
       { status: 500 }
-    );
+    )
   }
 }

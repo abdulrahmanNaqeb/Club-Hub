@@ -199,7 +199,32 @@ export async function getOrSeedFormSchema(
     }
 
     if (formType === "EVENT_APPROVAL") {
-      if (def.fieldKey === EVENT_NAME_FIELD_KEY) ensureReserved(def);
+      if (def.fieldKey !== EVENT_NAME_FIELD_KEY) {
+        continue;
+      }
+
+      const legacyFieldKey = "event_name"
+      const legacyIndex = fields.findIndex((f) => f.fieldKey === legacyFieldKey)
+      const canonicalIndex = fields.findIndex((f) => f.fieldKey === EVENT_NAME_FIELD_KEY)
+
+      if (legacyIndex !== -1) {
+        if (canonicalIndex === -1) {
+          const legacy = fields[legacyIndex]
+          fields[legacyIndex] = {
+            ...legacy,
+            fieldKey: EVENT_NAME_FIELD_KEY,
+            type: def.type,
+            required: def.required,
+            label: def.label,
+          }
+          changed = true
+        } else {
+          fields.splice(legacyIndex, 1)
+          changed = true
+        }
+      }
+
+      ensureReserved(def)
       continue;
     }
   }
