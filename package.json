@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently --kill-others --names \"next,trigger\" --prefix-colors \"yellow,blue\" \"next dev\" \"npm run trigger:dev\"",
-    "trigger:dev": "npx trigger.dev@latest dev",
+    "trigger:dev": "npx trigger.dev@4.5.6 dev",
     "build": "next build",
     "prebuild": "prisma generate",
     "start": "next start",
