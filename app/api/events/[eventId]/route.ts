@@ -2,15 +2,55 @@ import { NextResponse } from "next/server"
 
 import { getActiveClub } from "@/lib/org-scope"
 import { prisma } from "@/lib/prisma"
-import { EventStatus } from "@/generated/prisma/client"
+import { EventStatus, type Prisma } from "@/generated/prisma/client"
 
 const VALID_STATUSES = new Set<string>(Object.values(EventStatus))
 
-function parseStatus(body: unknown): EventStatus | null {
-  if (!body || typeof body !== "object" || !("status" in body)) return null
-  const { status } = body as { status: unknown }
-  if (typeof status !== "string" || !VALID_STATUSES.has(status)) return null
-  return status as EventStatus
+function parseEventPatchBody(body: unknown): Prisma.EventUpdateInput | null {
+  if (!body || typeof body !== "object") return null
+  const b = body as Record<string, unknown>
+  const data: Prisma.EventUpdateInput = {}
+  let hasField = false
+
+  if ("status" in b) {
+    if (typeof b.status !== "string" || !VALID_STATUSES.has(b.status)) return null
+    data.status = b.status as EventStatus
+    hasField = true
+  }
+
+  if ("title" in b) {
+    if (typeof b.title !== "string" || b.title.trim().length === 0) return null
+    data.title = b.title.trim()
+    hasField = true
+  }
+
+  if ("description" in b) {
+    if (b.description !== null && typeof b.description !== "string") return null
+    data.description = b.description
+    hasField = true
+  }
+
+  if ("location" in b) {
+    if (b.location !== null && typeof b.location !== "string") return null
+    data.location = b.location
+    hasField = true
+  }
+
+  if ("dateTime" in b) {
+    if (b.dateTime === null) {
+      data.dateTime = null
+      hasField = true
+    } else if (typeof b.dateTime === "string") {
+      const parsed = new Date(b.dateTime)
+      if (Number.isNaN(parsed.getTime())) return null
+      data.dateTime = parsed
+      hasField = true
+    } else {
+      return null
+    }
+  }
+
+  return hasField ? data : null
 }
 
 export async function PATCH(
@@ -33,9 +73,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 })
   }
 
-  const status = parseStatus(body)
-  if (!status) {
-    return NextResponse.json({ error: "A valid event status is required." }, { status: 400 })
+  const data = parseEventPatchBody(body)
+  if (!data) {
+    return NextResponse.json({ error: "No valid fields to update." }, { status: 400 })
   }
 
   const event = await prisma.event.findUnique({ where: { id: eventId } })
@@ -45,8 +85,17 @@ export async function PATCH(
 
   const updated = await prisma.event.update({
     where: { id: eventId },
-    data: { status },
+    data,
   })
 
-  return NextResponse.json({ event: { id: updated.id, status: updated.status } })
+  return NextResponse.json({
+    event: {
+      id: updated.id,
+      title: updated.title,
+      description: updated.description,
+      location: updated.location,
+      status: updated.status,
+      dateTime: updated.dateTime ? updated.dateTime.toISOString() : null,
+    },
+  })
 }

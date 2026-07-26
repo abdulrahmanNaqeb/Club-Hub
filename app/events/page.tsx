@@ -1,5 +1,8 @@
+import { auth } from "@clerk/nextjs/server"
+
 import { requireOrgMode } from "@/lib/get-org-mode"
 import { prisma } from "@/lib/prisma"
+import { getClubMembers } from "@/lib/club-members"
 import { AppShell } from "@/components/app/app-shell"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EventsRoomProvider } from "@/components/events/events-room-provider"
@@ -9,11 +12,16 @@ import type { BoardEvent } from "@/components/events/board-types"
 
 export default async function EventsPage() {
   const club = await requireOrgMode("club")
+  const { userId } = await auth()
 
-  const events = await prisma.event.findMany({
-    where: { clubId: club.id },
-    orderBy: { createdAt: "asc" },
-  })
+  const [events, members] = await Promise.all([
+    prisma.event.findMany({
+      where: { clubId: club.id },
+      orderBy: { createdAt: "asc" },
+      include: { tasks: { orderBy: { createdAt: "asc" } } },
+    }),
+    getClubMembers(club.clerkOrgId),
+  ])
 
   const boardEvents: BoardEvent[] = events.map((event) => ({
     id: event.id,
@@ -22,6 +30,13 @@ export default async function EventsPage() {
     location: event.location,
     status: event.status,
     dateTime: event.dateTime ? event.dateTime.toISOString() : null,
+    tasks: event.tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      assignee: task.assignee,
+      done: task.done,
+    })),
+    assignedToMe: event.tasks.some((task) => task.assignee === userId),
   }))
 
   return (
@@ -34,14 +49,14 @@ export default async function EventsPage() {
           </TabsList>
         </div>
 
-        <TabsContent value="board" className="min-h-0 flex-1 p-6">
+        <TabsContent value="board" keepMounted className="min-h-0 flex-1 p-6">
           <EventsRoomProvider roomId={`events-board:${club.id}`}>
-            <EventsBoard initialEvents={boardEvents} />
+            <EventsBoard initialEvents={boardEvents} members={members} />
           </EventsRoomProvider>
         </TabsContent>
 
         <TabsContent value="calendar" className="flex-1 overflow-y-auto p-6">
-          <EventsCalendar events={boardEvents} />
+          <EventsCalendar events={boardEvents} members={members} />
         </TabsContent>
       </Tabs>
     </AppShell>

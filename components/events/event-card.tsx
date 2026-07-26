@@ -28,9 +28,6 @@ export function EventCard({ event, onOpen }: EventCardProps) {
       })
     : null
 
-  // No accent-primary "assigned to me" stripe: Event has no creator/assignee
-  // column yet (that arrives with checklists in 16-event-detail-checklist.md),
-  // and 14-events-board.md explicitly allows skipping this until then.
   return (
     <button
       ref={setNodeRef}
@@ -42,6 +39,7 @@ export function EventCard({ event, onOpen }: EventCardProps) {
       className={cn(
         "w-full rounded-xl border border-transparent bg-elevated p-3 text-left shadow-sm transition-shadow",
         "hover:border-surface-border",
+        event.assignedToMe && "border-l-4 border-l-brand",
         isDragging && "border-surface-border-subtle opacity-60 shadow-md"
       )}
     >

@@ -15,21 +15,28 @@ import { useMutation, useOthers, useStatus, useStorage } from "@liveblocks/react
 import type { EventStatus } from "@/generated/prisma/client"
 
 import { EVENT_STATUSES } from "@/components/events/board-types"
-import type { BoardEvent } from "@/components/events/board-types"
+import type { BoardEvent, ClubMember } from "@/components/events/board-types"
 import { EventColumn } from "@/components/events/event-column"
 import { EventCard } from "@/components/events/event-card"
 import { EventDetailDialog } from "@/components/events/event-detail-dialog"
 
 interface EventsBoardProps {
   initialEvents: BoardEvent[]
+  members: ClubMember[]
 }
 
-export function EventsBoard({ initialEvents }: EventsBoardProps) {
+export function EventsBoard({ initialEvents, members }: EventsBoardProps) {
+  // Local copy so editing an event's core fields (16-event-detail-checklist.md)
+  // can update the card in place — reconciliation/moveCard below still key
+  // off `initialEvents` (event IDs/status never change from the detail
+  // dialog), only the rendered content needs to reflect edits live.
+  const [events, setEvents] = useState(initialEvents)
+
   const eventsById = useMemo(() => {
     const map = new Map<string, BoardEvent>()
-    for (const event of initialEvents) map.set(event.id, event)
+    for (const event of events) map.set(event.id, event)
     return map
-  }, [initialEvents])
+  }, [events])
 
   const columns = useStorage((root) => root.columns)
   const others = useOthers()
@@ -211,8 +218,13 @@ export function EventsBoard({ initialEvents }: EventsBoardProps) {
 
       <EventDetailDialog
         event={selectedEvent}
+        members={members}
         onOpenChange={(open) => {
           if (!open) setSelectedEvent(null)
+        }}
+        onEventUpdated={(updated) => {
+          setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
+          setSelectedEvent(updated)
         }}
       />
     </div>

@@ -10,7 +10,7 @@ Flag explicitly in `progress-tracker.md`: this spec is intentionally a placehold
 
 ## Trigger.dev Setup
 
-Install and configure Trigger.dev per their current Next.js integration docs (check their docs directly — don't assume specifics from training data, their setup process changes). At minimum you'll need: the SDK installed, a `trigger.config.ts`, an API key in `.env`, and a way to run the local dev worker alongside `next dev`.
+Install and configure Trigger.dev per their current Next.js integration docs (check their docs directly — don't assume specifics from training data, their setup process changes). At minimum you'll need: the SDK installed, a `trigger.config.ts`, a secret key in the repository's existing `.env.local` file or your deployment secret manager convention, and a way to run the local dev worker alongside `next dev`.
 
 ## The Job
 

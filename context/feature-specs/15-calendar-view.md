@@ -12,7 +12,7 @@ Month navigation: previous/next month arrows, a "Today" button to jump back to t
 
 ## Handling Events Without a Date
 
-Per `05-prisma.md`, `Event.date` is nullable — a card can exist on the board (`IDEA`/`PLANNING`) before anyone's picked a date. These can't be placed on a calendar grid. Show them in a small "Unscheduled" list alongside the calendar (not inside the grid) rather than silently hiding them — a club shouldn't lose visibility into an idea just because it lacks a date yet.
+Per `05-prisma.md`, `Event.dateTime` is nullable — a card can exist on the board (`IDEA`/`PLANNING`) before anyone has picked a date/time. These can't be placed on a calendar grid or grouped into a day cell. Show them in a small "Unscheduled" list alongside the calendar (not inside the grid) rather than silently hiding them — a club shouldn't lose visibility into an idea just because `Event.dateTime` is still unset.
 
 ## Data
 
