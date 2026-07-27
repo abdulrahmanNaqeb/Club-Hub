@@ -29,6 +29,7 @@ Each card shows: title, status-appropriate secondary info (date if set), and is 
 
 - Reordering within a column: update the relevant Liveblocks `LiveList` only — no Prisma call needed, this is pure ordering.
 - Moving to a different column: update both — remove from the old column's `LiveList`, add to the new column's `LiveList`, AND call `PATCH /api/events/[eventId]` to update `Event.status` in Prisma. Do the Liveblocks Storage update optimistically (instant UI feedback), and if the Prisma call fails, revert the Storage change and show an error — don't leave the UI showing a state the database doesn't actually have.
+  - When rolling back after a failed Prisma write, first verify the current shared Storage state for that card still reflects the optimistic mutation you attempted; if the shared room state has diverged (another user's change arrived), avoid blindly restoring the original column/index and instead skip the rollback or reconcile using a mutation/version identifier so you don't overwrite newer Liveblocks updates.
 
 ## API
 

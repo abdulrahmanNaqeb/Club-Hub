@@ -18,22 +18,22 @@ const MAX_VISIBLE_PER_DAY = 3
 const WEEKS_IN_GRID = 6
 
 function dateKey(date: Date) {
-  return `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
 }
 
 // Building a fixed 6-week grid off `new Date`'s own overflow handling
 // (e.g. day 0 of a month rolls back into the previous one) is what makes
 // month boundaries — including December -> January -- work for free.
 function buildMonthGrid(monthStart: Date) {
-  const year = monthStart.getUTCFullYear()
-  const month = monthStart.getUTCMonth()
-  const startOffset = new Date(Date.UTC(year, month, 1)).getUTCDay()
-  const gridStart = new Date(Date.UTC(year, month, 1 - startOffset))
+  const year = monthStart.getFullYear()
+  const month = monthStart.getMonth()
+  const startOffset = new Date(year, month, 1).getDay()
+  const gridStart = new Date(year, month, 1 - startOffset)
 
   const days: { date: Date; inCurrentMonth: boolean }[] = []
   for (let i = 0; i < WEEKS_IN_GRID * 7; i++) {
-    const date = new Date(Date.UTC(gridStart.getUTCFullYear(), gridStart.getUTCMonth(), gridStart.getUTCDate() + i))
-    days.push({ date, inCurrentMonth: date.getUTCMonth() === month })
+    const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i)
+    days.push({ date, inCurrentMonth: date.getMonth() === month })
   }
   return days
 }
@@ -45,9 +45,9 @@ export function EventsCalendar({ events: initialEvents, members }: EventsCalenda
 
   const today = useMemo(() => {
     const now = new Date()
-    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate())
   }, [])
-  const [cursor, setCursor] = useState(() => new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)))
+  const [cursor, setCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
   const [selectedEvent, setSelectedEvent] = useState<BoardEvent | null>(null)
 
   const unscheduled = useMemo(() => events.filter((event) => event.dateTime === null), [events])
@@ -68,7 +68,6 @@ export function EventsCalendar({ events: initialEvents, members }: EventsCalenda
   const monthLabel = cursor.toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
-    timeZone: "UTC",
   })
   const todayKey = dateKey(today)
 
@@ -81,7 +80,7 @@ export function EventsCalendar({ events: initialEvents, members }: EventsCalenda
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCursor(new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)))}
+              onClick={() => setCursor(new Date(today.getFullYear(), today.getMonth(), 1))}
             >
               Today
             </Button>
@@ -89,7 +88,7 @@ export function EventsCalendar({ events: initialEvents, members }: EventsCalenda
               variant="outline"
               size="icon"
               aria-label="Previous month"
-              onClick={() => setCursor((c) => new Date(Date.UTC(c.getUTCFullYear(), c.getUTCMonth() - 1, 1)))}
+              onClick={() => setCursor((c) => new Date(c.getFullYear(), c.getMonth() - 1, 1))}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -97,7 +96,7 @@ export function EventsCalendar({ events: initialEvents, members }: EventsCalenda
               variant="outline"
               size="icon"
               aria-label="Next month"
-              onClick={() => setCursor((c) => new Date(Date.UTC(c.getUTCFullYear(), c.getUTCMonth() + 1, 1)))}
+              onClick={() => setCursor((c) => new Date(c.getFullYear(), c.getMonth() + 1, 1))}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>

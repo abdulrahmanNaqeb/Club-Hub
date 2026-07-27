@@ -8,7 +8,7 @@ All colors are defined as CSS custom properties in `globals.css` and mapped to T
 
 | Role             | CSS Variable            | Hex / Value                |
 | ---------------- | ------------------------ | --------------------------- |
-| Page background  | `--bg-base` (Tailwind: `bg-page`) | `#080809`           |
+| Page background  | `--bg-base`              | `#080809`                   |
 | Surface          | `--bg-surface`           | `#111114`                   |
 | Elevated surface | `--bg-elevated`          | `#18181c`                   |
 | Subtle surface   | `--bg-subtle`            | `#1e1e23`                   |
@@ -18,28 +18,37 @@ All colors are defined as CSS custom properties in `globals.css` and mapped to T
 | Secondary text   | `--text-secondary`       | `#c0c0cc`                   |
 | Muted text       | `--text-muted`           | `#808090`                   |
 | Faint text       | `--text-faint`           | `#505060`                   |
-| Brand accent     | `--accent-primary`       | `#ff8a00` (orange)          |
-| Brand dim        | `--accent-primary-dim`   | `rgba(255, 138, 0, 0.12)`   |
+| Brand accent     | `--accent-primary`       | `#00c8d4` (cyan)             |
+| Brand dim        | `--accent-primary-dim`   | `rgba(0, 200, 212, 0.12)`   |
 | Secondary accent | `--accent-secondary`     | `#6457f9` (indigo-purple)   |
 | Secondary text   | `--accent-secondary-text`| `#8b82ff`                   |
 | Error            | `--state-error`          | `#ff4d4f`                   |
 | Success          | `--state-success`        | `#34d399`                   |
 | Warning          | `--state-warning`        | `#fbbf24`                   |
 
-Tailwind utility names map to these variables. Use `bg-page`, `bg-surface`, `text-copy-primary`, `text-copy-muted`, `border-surface-border`, `text-brand`, `bg-accent-dim`, etc.
+Tailwind utility names map to these variables. Use `bg-base`, `bg-surface`, `text-copy-primary`, `text-copy-muted`, `border-surface-border`, `text-brand`, `bg-accent-dim`, etc.
 
-Note: the page-background token is exposed as Tailwind utility `bg-page`, not `bg-base` — `base` collides with Tailwind's built-in `text-base` font-size utility (shadcn/ui components rely on `text-base` for font sizing; naming our color token `--color-base` silently overrode it to set text color instead of font size).
-
-`accent-primary` (orange) is the default interactive color across the app — primary buttons, active nav items, links. `accent-secondary` (indigo-purple) is reserved for the Brainstorm feature specifically (creation actions, promote-to-list, new-idea affordances) so it reads as a distinct "creative" mode rather than being used generically.
+`accent-primary` (cyan) is the default interactive color across the app — primary buttons, active nav items, links. `accent-secondary` (indigo-purple) is reserved for the Brainstorm feature specifically (creation actions, promote-to-list, new-idea affordances) so it reads as a distinct "creative" mode rather than being used generically.
 
 ## Typography
 
-| Role      | Font       | CSS Variable        |
-| --------- | ---------- | -------------------- |
-| UI text   | Geist Sans | `--font-geist-sans`  |
-| Code/mono | Geist Mono | `--font-geist-mono`  |
+| Role      | Font          | CSS Variable        |
+| --------- | ------------- | -------------------- |
+| UI text   | Inter         | `--font-sans`        |
+| Code/mono | JetBrains Mono| `--font-mono`        |
 
-Both fonts are loaded via `next/font/google` and applied as CSS variables on the `<html>` element. The base `body` uses Geist Sans with `antialiased`. Geist Mono is reserved for numbers/stats/timestamps — budget figures, dates, task counts — reinforcing the "tool" feel.
+Both fonts are loaded via `next/font/google` and applied as CSS variables on the `<html>` element. The base `body` uses Inter with `antialiased`. JetBrains Mono is reserved for numbers/stats/timestamps — budget figures, dates, task counts — reinforcing the "tool" feel.
+
+**Sizing — run noticeably larger than Tailwind's defaults, not the same scale:**
+
+| Role | Size |
+|---|---|
+| Base body text | `16px` (`text-base`), not the smaller default some scaffolds ship with |
+| Secondary/muted text | `14px` (`text-sm`) — never smaller than this app-wide |
+| Section headings | `20px`–`24px` (`text-xl`/`text-2xl`) |
+| Page titles | `28px`–`32px` (`text-3xl`) |
+
+If any component (shadcn defaults especially) renders text smaller than 14px, override it — nothing in this app should read as "fine print" by default.
 
 ## Border Radius
 

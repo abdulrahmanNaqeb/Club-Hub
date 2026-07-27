@@ -21,6 +21,7 @@ Clicking an application opens a detail view (a `Dialog` or a dedicated sub-route
 Approving requires one additional input first: a **baseline budget amount** (number, required) — this is the union setting the club's starting budget as part of approval, per `architecture-context.md`. Show this as a small form within the approve confirmation (don't make it a separate step).
 
 On confirm:
+0. Atomically claim the `ClubApplication` by conditioning a status update on `PENDING` (for example an `updateMany` or transactional check). If this claim fails because another request already changed the status, abort without creating a Clerk organization or invitation.
 1. Create a Clerk Organization for the new club (name from the application's answers).
 2. Invite `proposedAdminEmail` to that org with the admin role, using Clerk's organization invitation flow — this works whether or not that email already has a Clerk account.
 3. Create the `Club` record: `institutionId`, the new `clerkOrgId`, `approvalStatus: APPROVED`, the baseline budget amount entered above.

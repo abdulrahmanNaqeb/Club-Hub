@@ -24,7 +24,7 @@ Below the core fields, a task list:
 ## API
 
 - `POST /api/events/[eventId]/tasks` — body: `{ title }`, assignee starts null
-- `PATCH /api/events/[eventId]/tasks/[taskId]` — body: any of `{ title, done, assignee }`
+- `PATCH /api/events/[eventId]/tasks/[taskId]` — body: any of `{ title, done, assignee }` — when `assignee` is non-null, the route must validate that the provided user id is a current member of the active club's Clerk organization and reject invalid or out-of-club ids.
 - `DELETE /api/events/[eventId]/tasks/[taskId]`
 
 All three verify the task's event belongs to the requester's active club, same ownership pattern as everywhere else.

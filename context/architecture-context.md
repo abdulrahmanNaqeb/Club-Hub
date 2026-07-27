@@ -59,6 +59,14 @@ Club applications, event approvals, and funding requests are **schema-driven**, 
 - `UnionStaffOrgLink` — maps a Clerk org ID to an `Institution` (so we can resolve institution from the active Clerk org on union routes).
 - `FormSchema` — institution + form type + ordered field definitions (see "Configurable Forms" above).
 - `ClubApplication` — the submitted form; `answers` + `schemaSnapshot` JSON; status `PENDING` / `APPROVED` / `REJECTED`; on approval, triggers creation of the Club's Clerk org and Prisma `Club` record together, in one step — never partially.
+  
+	Idempotent approval behavior: external side effects (Clerk organization creation/invitations) and the Prisma `Club` record are treated as coordinated steps with durable intent recorded on the `ClubApplication`. The system should:
+
+	- Record an explicit operation/state on the `ClubApplication` (for example `claimToken`, `operationId`, or an `inProgress` timestamp) before making external calls so retries can detect work already started.
+	- Detect partial outcomes by consulting the durable operation record or Clerk metadata and reconcile the missing counterpart rather than blindly retrying and risking duplicates (e.g. if the Clerk org exists but the Prisma `Club` does not, create the missing `Club` record; if the Prisma `Club` exists but no Clerk org, reattempt org creation or mark for manual reconciliation).
+	- Provide a compensating cleanup path (delete orphaned Clerk orgs or mark applications with a reconciliation-needed flag) and an automated reconciliation job for operators/backfill that can bring the system to a consistent final state.
+
+	This avoids relying on a brittle "never partially" guarantee and makes approval operations safe to retry under transient failures.
 - `Club` — `institutionId`, `approvalStatus`, baseline budget amount, `brainstormCanvasJsonPath`.
 - `EventApprovalRequest` — `answers` + `schemaSnapshot` JSON; status `PENDING` / `APPROVED` / `REJECTED`. Separate from funding.
 - `FundingRequest` — `answers` + `schemaSnapshot` JSON (defaults to amount + reason); status `PENDING` / `APPROVED` / `REJECTED`; on approval, increases the club's tracked available budget.

@@ -10,7 +10,7 @@ Look up the `Institution` by slug. If it doesn't exist, show a simple "This inst
 
 Extract the field-rendering logic from `06-form-schema-builder.md`'s builder into a shared component: `components/forms/dynamic-form.tsx`, taking a `FormSchema.fields` array and rendering the appropriate shadcn input per field type (Short text → `Input`, Long text → `Textarea`, Number → `Input type=number`, Yes/No → a toggle or radio pair, Single select → `Select`, Date → a date input). This component will be reused by event-approval and funding-request submission flows in later specs — build it generically now rather than one-off.
 
-Skip File upload fields for this unit — render a disabled placeholder input with "File uploads coming soon" if one exists in the schema. Full file handling is a separate, focused piece of work, not something to bolt on here.
+Skip File upload fields for this unit — render a disabled placeholder input with "File uploads coming soon" if one exists in the schema. Full file handling is a separate, focused piece of work, not something to bolt on here. Required `File upload` fields must be treated as non-blocking for validation in this unit: either the builder should disable the required toggle for `File` fields, or the dynamic renderer/validation should ignore `File` fields when enforcing required constraints until uploads are supported.
 
 ## Schema Loading
 
@@ -28,6 +28,8 @@ On submit:
 - snapshot the current schema's fields into `schemaSnapshot`
 - pull `proposedAdminEmail` (with the fallback above) into `ClubApplication.proposedAdminEmail`
 - create the `ClubApplication` row: institution relation, status `PENDING`, `answers`, `schemaSnapshot`, `proposedAdminEmail`
+ - persist the submitting Clerk user's id in `ClubApplication.proposedAdmin` in addition to `proposedAdminEmail` (the `proposedAdmin` field is the authoritative identity reference; a separate submitted `admin-name` field may still be captured for display only)
+ - create the `ClubApplication` row: institution relation, status `PENDING`, `answers`, `schemaSnapshot`, `proposedAdminEmail`, and `proposedAdmin`
 - redirect to a simple confirmation screen: "Application submitted — you'll hear back once [institution name]'s union reviews it." No queue-viewing for the applicant yet — that's a union-side concern, later spec.
 
 ## API

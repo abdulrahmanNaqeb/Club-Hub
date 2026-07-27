@@ -87,11 +87,18 @@ function EventDetailContent({ event, members, onUpdated }: EventDetailContentPro
     setSaving(true)
     setSaveError(null)
     try {
+      const trimmedTitle = title.trim()
+      if (!trimmedTitle) {
+        setSaveError("Title cannot be empty.")
+        setSaving(false)
+        return
+      }
+
       const res = await fetch(`/api/events/${event.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
+          title: trimmedTitle,
           description: description.trim() === "" ? null : description,
           location: location.trim() === "" ? null : location,
           dateTime: fromDatetimeLocalValue(dateTimeLocal),
@@ -119,7 +126,11 @@ function EventDetailContent({ event, members, onUpdated }: EventDetailContentPro
       })
       if (!res.ok) throw new Error("Request failed")
       const { task } = await res.json()
-      setTasks((prev) => [...prev, task])
+      setTasks((prev) => {
+        const next = [...prev, task]
+        onUpdated({ ...event, tasks: next })
+        return next
+      })
       setNewTaskTitle("")
     } catch {
       setTaskError("Couldn't add that task. Please try again.")
@@ -137,6 +148,9 @@ function EventDetailContent({ event, members, onUpdated }: EventDetailContentPro
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error("Request failed")
+      // On success, propagate the updated tasks list to parent
+      const next = tasks.map((t) => (t.id === taskId ? { ...t, ...data } : t))
+      onUpdated({ ...event, tasks: next })
     } catch {
       setTasks(previous)
       setTaskError("Couldn't update that task. Please try again.")
@@ -150,6 +164,8 @@ function EventDetailContent({ event, members, onUpdated }: EventDetailContentPro
     try {
       const res = await fetch(`/api/events/${event.id}/tasks/${taskId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Request failed")
+      const next = tasks.filter((t) => t.id !== taskId)
+      onUpdated({ ...event, tasks: next })
     } catch {
       setTasks(previous)
       setTaskError("Couldn't delete that task. Please try again.")
@@ -273,6 +289,7 @@ function TaskRow({ task, members, onToggleDone, onRename, onAssign, onDelete }: 
     <div className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-surface">
       <input
         type="checkbox"
+        aria-label={`Mark ${task.title} as ${task.done ? "incomplete" : "done"}`}
         checked={task.done}
         onChange={(e) => onToggleDone(e.target.checked)}
         className="h-4 w-4 shrink-0 rounded border-surface-border accent-brand"
@@ -284,16 +301,17 @@ function TaskRow({ task, members, onToggleDone, onRename, onAssign, onDelete }: 
           value={draftTitle}
           onChange={(e) => setDraftTitle(e.target.value)}
           onBlur={commitRename}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault()
-              commitRename()
-            }
-            if (e.key === "Escape") {
-              setDraftTitle(task.title)
-              setIsEditingTitle(false)
-            }
-          }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault()
+                commitRename()
+              }
+              if (e.key === "Escape") {
+                e.stopPropagation()
+                setDraftTitle(task.title)
+                setIsEditingTitle(false)
+              }
+            }}
           className="h-7 flex-1"
         />
       ) : (

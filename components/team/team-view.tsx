@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils"
 import type { ClubMember } from "@/lib/club-members"
 
 export interface TeamMember extends ClubMember {
-  tasksDone: number
 }
 
 interface TeamViewProps {
@@ -52,8 +51,6 @@ function MemberAvatar({ member }: { member: TeamMember }) {
 
 export function TeamView({ members, isAdmin }: TeamViewProps) {
   const clerk = useClerk()
-  const leaderboard = [...members].sort((a, b) => b.tasksDone - a.tasksDone)
-
   return (
     <div className="space-y-6">
       <Card>
@@ -81,7 +78,6 @@ export function TeamView({ members, isAdmin }: TeamViewProps) {
               <TableRow>
                 <TableHead>Member</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead className="text-right">Tasks done</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -96,38 +92,10 @@ export function TeamView({ members, isAdmin }: TeamViewProps) {
                   <TableCell>
                     <Badge variant="outline">{formatRole(member.role)}</Badge>
                   </TableCell>
-                  <TableCell className="text-right text-copy-secondary">
-                    {member.tasksDone}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Leaderboard</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-1">
-            {leaderboard.map((member, index) => (
-              <li key={member.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5">
-                <span
-                  className={cn(
-                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium",
-                    index < 3 ? "bg-accent-dim text-brand" : "text-copy-muted"
-                  )}
-                >
-                  {index + 1}
-                </span>
-                <MemberAvatar member={member} />
-                <span className="flex-1 truncate text-sm text-copy-primary">{member.name}</span>
-                <span className="text-sm text-copy-secondary">{member.tasksDone} tasks</span>
-              </li>
-            ))}
-          </ul>
         </CardContent>
       </Card>
     </div>

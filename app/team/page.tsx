@@ -28,7 +28,6 @@ export default async function TeamPage() {
 
   const teamMembers: TeamMember[] = members.map((member) => ({
     ...member,
-    tasksDone: mockTasksDone(member.id),
   }));
 
   return (

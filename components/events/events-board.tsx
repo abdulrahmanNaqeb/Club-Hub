@@ -5,12 +5,14 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
   closestCorners,
   useSensor,
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core"
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable"
 import { useMutation, useOthers, useStatus, useStorage } from "@liveblocks/react/suspense"
 import type { EventStatus } from "@/generated/prisma/client"
 
@@ -124,7 +126,8 @@ export function EventsBoard({ initialEvents, members }: EventsBoardProps) {
   )
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
   function handleDragStart(dragEvent: DragStartEvent) {
@@ -164,6 +167,9 @@ export function EventsBoard({ initialEvents, members }: EventsBoardProps) {
     // Prisma write — revert Storage if the write fails so the UI never
     // shows a column the database doesn't actually agree with.
     moveCard({ eventId, toStatus, toIndex })
+    // Optimistically reflect the status change in local state so the
+    // EventDetailDialog and cards render the moved status immediately.
+    setEvents((prev) => prev.map((ev) => (ev.id === eventId ? { ...ev, status: toStatus } : ev)))
     setError(null)
 
     try {
@@ -175,6 +181,8 @@ export function EventsBoard({ initialEvents, members }: EventsBoardProps) {
       if (!res.ok) throw new Error("Request failed")
     } catch {
       moveCard({ eventId, toStatus: fromStatus, toIndex: fromIndex })
+      // Restore the previous local status alongside Storage rollback.
+      setEvents((prev) => prev.map((ev) => (ev.id === eventId ? { ...ev, status: fromStatus } : ev)))
       setError("Couldn't move that card. Please try again.")
     }
   }

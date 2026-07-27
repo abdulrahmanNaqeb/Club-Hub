@@ -90,6 +90,15 @@ export async function POST(
     )
   }
 
+  // If the application has already been approved/declined/etc, stop early
+  // before performing external side effects (Clerk org/invitation).
+  if (application.status !== "PENDING") {
+    return NextResponse.json(
+      { error: "This application has already been decided." },
+      { status: 409 }
+    )
+  }
+
   const client = await clerkClient()
   let org: { id: string } | null = null
 

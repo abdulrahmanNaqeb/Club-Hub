@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,16 +34,25 @@ export function ApplicationsQueue({
   applications: initialApplications,
 }: ApplicationsQueueProps) {
   const router = useRouter()
-  const [applications, setApplications] = useState(initialApplications)
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set())
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const selected =
-    applications.find((application) => application.id === selectedId) ?? null
+    initialApplications.find((application) => application.id === selectedId) ?? null
+
+  // Derive the displayed applications from the latest props while
+  // excluding any locally-removed ids. Clear local removals when the
+  // prop snapshot changes so the list follows server state.
+  const displayed = initialApplications.filter((a) => !removedIds.has(a.id))
+
+  // Reset local removed ids when the incoming prop list changes.
+  // This keeps the component in sync with server refreshes.
+  useEffect(() => {
+    setRemovedIds(new Set())
+  }, [initialApplications])
 
   function handleDecided(applicationId: string) {
-    setApplications((current) =>
-      current.filter((application) => application.id !== applicationId)
-    )
+    setRemovedIds((prev) => new Set(prev).add(applicationId))
     setSelectedId(null)
     router.refresh()
   }
@@ -55,7 +64,7 @@ export function ApplicationsQueue({
           <CardTitle>Applications</CardTitle>
         </CardHeader>
         <CardContent>
-          {applications.length === 0 ? (
+          {displayed.length === 0 ? (
             <p className="text-sm text-copy-secondary">
               No pending club applications right now.
             </p>
@@ -69,7 +78,7 @@ export function ApplicationsQueue({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {applications.map((application) => (
+                {displayed.map((application) => (
                   <TableRow key={application.id}>
                     <TableCell className="font-medium text-copy-primary">
                       {application.clubName}

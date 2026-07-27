@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Landmark,
   FileText,
+  Wallet,
   type LucideIcon,
 } from "lucide-react"
 
@@ -26,6 +27,7 @@ interface NavItem {
 const CLUB_NAV_ITEMS: NavItem[] = [
   { label: "Team", icon: Users, href: "/team" },
   { label: "Events", icon: CalendarDays, href: "/events" },
+  { label: "Budget", icon: Wallet, href: "/budget" },
   { label: "More", icon: LayoutGrid, disabled: true },
 ]
 

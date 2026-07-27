@@ -13,11 +13,12 @@ Define these as CSS custom properties on `:root`, using the exact values from `c
 - `--bg-base`, `--bg-surface`, `--bg-elevated`, `--bg-subtle`
 - `--border-default`, `--border-subtle`
 - `--text-primary`, `--text-secondary`, `--text-muted`, `--text-faint`
+ - `--text-copy-primary`, `--text-copy-secondary`, `--text-copy-muted`, `--text-copy-faint`
 - `--accent-primary`, `--accent-primary-dim`
 - `--accent-secondary`, `--accent-secondary-text`
 - `--state-error`, `--state-success`, `--state-warning`
 
-Map each one into the `@theme inline` block so Tailwind utilities are generated from them (e.g. `--color-bg-base: var(--bg-base);` so `bg-base` works as a Tailwind class — follow the same `--color-*` naming pattern Tailwind v4 uses for the existing `--color-background`/`--color-foreground` mapping).
+Map each one into the `@theme inline` block so Tailwind utilities are generated from them (e.g. `--color-bg-base: var(--bg-base);` so `bg-base` works as a Tailwind class — follow the same `--color-*` naming pattern Tailwind v4 uses for the existing `--color-background`/`--color-foreground` mapping). Use the `text-copy-*` token names (e.g. `text-copy-primary`) as the canonical naming for text color utilities to match existing component usage.
 
 Keep the existing font variable mapping (`--font-sans`, `--font-mono` → `--font-geist-sans`, `--font-geist-mono`) as-is — that part doesn't change.
 
