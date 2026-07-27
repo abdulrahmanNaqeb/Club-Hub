@@ -3,12 +3,14 @@ import { clerkClient } from "@clerk/nextjs/server"
 export interface ClubMember {
   id: string
   name: string
+  role: string
+  imageUrl: string | null
 }
 
-// No prior pattern to reuse here — 04-team-view.md doesn't exist and
-// team-view isn't built yet, despite 16-event-detail-checklist.md's spec
-// text assuming one. This establishes the org-membership-list pattern for
-// whoever builds team-view next.
+// Established here (not by 04-team-view.md, which hadn't been built yet)
+// during 16-event-detail-checklist.md, for the event-assignee picker.
+// Extended with role/imageUrl for 04-team-view.md's member list — reused
+// as-is rather than adding a second Clerk-membership-fetching helper.
 export async function getClubMembers(clerkOrgId: string): Promise<ClubMember[]> {
   const client = await clerkClient()
   const { data: memberships } = await client.organizations.getOrganizationMembershipList({
@@ -21,6 +23,11 @@ export async function getClubMembers(clerkOrgId: string): Promise<ClubMember[]> 
     .map((membership) => {
       const user = membership.publicUserData!
       const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
-      return { id: user.userId, name: fullName || user.identifier }
+      return {
+        id: user.userId,
+        name: fullName || user.identifier,
+        role: membership.role,
+        imageUrl: user.hasImage ? user.imageUrl : null,
+      }
     })
 }
