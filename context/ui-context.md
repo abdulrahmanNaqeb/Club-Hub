@@ -68,6 +68,7 @@ The Events board is a Kanban-style surface (status columns, draggable event card
 - Event cards sit one layer up on `bg-elevated`, `rounded-xl`, with a thin left-edge accent stripe in `accent-primary` for cards assigned to the current user.
 - Live presence (other members' cursors/avatars while viewing the board) uses small avatar stacks + colored cursor labels — subtle, not intrusive.
 - Drag state: lifted card gets a subtle shadow and `border-subtle` outline; drop targets highlight with `accent-primary-dim` background.
+- Board cards show compact schedule, location, checklist, and planning-readiness information. The Events workspace also includes Calendar and Plan tabs over the same event state; Plan is the final confirmed-events month/year preview, with incomplete plans called out rather than silently included as ready.
 
 ## Brainstorm Canvas
 
@@ -86,7 +87,9 @@ Freeform sticky-note surface, real-time via Liveblocks. Notes reuse a fixed colo
 
 Default note color: `#1F1F1F` with `#EDEDED` text — the color assigned to a new note is deterministic (e.g. round-robin by creation order), not user-chosen, to keep the flow fast. Notes are simple rounded rectangles (`rounded-xl`) with a slight rotation/shadow for a physical "sticky note" feel — no diagram shapes, no connecting edges.
 
-Promoting a note to the ranked list moves it out of canvas space into a plain vertically-sorted list UI (standard `Card` components, not canvas elements).
+Each note reserves a small header row for selection/promote/delete controls; controls never overlay editable text. Shift-click selects multiple notes, dragging any selected note moves the selection as one atomic Liveblocks mutation, and the toolbar can promote or delete the selection.
+
+Promoting one or more notes combines them into one structured Event idea or Issue and moves the selected notes out of canvas space. The Postgres-backed Idea Pipeline remains a standard vertically-ranked list, not another real-time canvas. Event items open the same Event planning editor used by Board/Calendar/Plan; Issue items use an issue brief and action checklist.
 
 ## Component Library
 

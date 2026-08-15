@@ -2,7 +2,7 @@ Build funding requests: a club submits a request for money (amount + reason, per
 
 ## Club-Side Submission
 
-Standalone route: `/budget/request-funding`, same access pattern as `10`'s `/events/request-approval` (any club member via `lib/org-scope.ts`). Reuse `dynamic-form.tsx` and `getOrSeedFormSchema` against FUNDING_REQUEST.
+Standalone route: `/budget/request-funding`, protected by `lib/org-scope.ts` and restricted to Club Admins using the current user's real Clerk organization membership role. Reuse `dynamic-form.tsx` and `getOrSeedFormSchema` against FUNDING_REQUEST.
 
 On submit: create a `FundingRequest` — club relation, `amount` (pull from the schema using a reserved key, add `FUNDING_AMOUNT_FIELD_KEY` to `lib/form-schema-defaults.ts`, same reserved-field pattern as `07`/`10`), `answers`, `schemaSnapshot`, status `PENDING`. Confirmation screen, no "my requests" view — same scope limits as before.
 
@@ -17,7 +17,7 @@ Two actions: **Approve** and **Reject**, same pattern as `10` — no extra input
 ## Approve Flow
 
 On confirm:
-1. Increase `Club.baselineBudgetAmount` by the requested `FundingRequest.amount`. (Per `architecture-context.md`'s naming, this field represents the club's total tracked available budget, not strictly a "baseline set once at approval time" — funding requests add to it over time. If this feels like a naming mismatch when you're in the code, that's correct to notice; don't rename the field as part of this spec, just be aware `baselineBudgetAmount` now means "cumulative approved budget," and flag the naming question in `progress-tracker.md` for a future cleanup pass rather than solving it now.)
+1. Increase `Club.availableBudgetAmount` by the requested `FundingRequest.amount`. This field starts with the baseline entered during club approval and then represents the cumulative union-approved budget.
 2. Update `FundingRequest`: status `APPROVED`.
 
 No `BudgetEntry` gets created here — a `FundingRequest` approval is money becoming *available* to the club, not money being *spent*. `BudgetEntry` (income/expense tracking) is a separate, later spec (`17`) for the club's own internal bookkeeping.
@@ -39,7 +39,7 @@ Same institution-ownership verification pattern as `10`.
 
 - don't build `BudgetEntry`/receipts — later spec
 - don't add itemized review UI — explicitly against the spec's intent
-- don't rename `Club.baselineBudgetAmount` — flag, don't fix, this pass
+- the historical `Club.baselineBudgetAmount` naming mismatch was resolved in a later stability pass by renaming the stored cumulative field to `availableBudgetAmount`
 
 ## Check When Done
 

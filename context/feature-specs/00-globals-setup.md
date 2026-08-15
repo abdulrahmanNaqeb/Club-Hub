@@ -13,7 +13,7 @@ Define these as CSS custom properties on `:root`, using the exact values from `c
 - `--bg-base`, `--bg-surface`, `--bg-elevated`, `--bg-subtle`
 - `--border-default`, `--border-subtle`
 - `--text-primary`, `--text-secondary`, `--text-muted`, `--text-faint`
- - `--text-copy-primary`, `--text-copy-secondary`, `--text-copy-muted`, `--text-copy-faint`
+- `--text-copy-primary`, `--text-copy-secondary`, `--text-copy-muted`, `--text-copy-faint`
 - `--accent-primary`, `--accent-primary-dim`
 - `--accent-secondary`, `--accent-secondary-text`
 - `--state-error`, `--state-success`, `--state-warning`

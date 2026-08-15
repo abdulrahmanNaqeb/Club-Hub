@@ -2,11 +2,9 @@ Build overspend detection: a background job that flags any club whose tracked sp
 
 ## What "Overspend" Means Here
 
-The current `Club.baselineBudgetAmount` aggregates the original baseline plus any approved funding requests, but because it is mutable it cannot serve as an immutable expected baseline for reliable discrepancy detection (missed or duplicated increments will be indistinguishable from legitimate changes). Instead of comparing a single mutable field, this spec recommends deriving the approved total from an immutable ledger of budget operations (e.g. an `InitialAllocation` row plus `ApprovedFunding` ledger rows) or maintaining an append-only journal of budget deltas. The overspend job should read from that immutable source or compute the approved total from immutable ledger rows.
+At the time this spec was first built, `BudgetEntry` (expense tracking) didn't exist yet, so the job could only run a placeholder sanity check against the club's mutable approved-budget field. That placeholder has since been superseded now that `17-budget-categories-entries.md` (`BudgetEntry`) exists: `computeOverspendStatus` uses the same remaining-budget formula as the club UI, `availableBudgetAmount + income - expenses`, and flags only when that canonical remaining amount is negative.
 
-Given `BudgetEntry` (expense tracking) is not yet implemented, this spec focuses on plumbing: build the flagging mechanism and the job infrastructure, but base any sanity checks on an immutable ledger or derived approved-total computation rather than trusting a single mutable `baselineBudgetAmount` field. Structure the job so plugging in real expense-sum-based overspend detection later (once `17` exists) is a small change, not a rewrite: isolate "compute a club's current spend/flag status" into one function, `lib/compute-overspend-status.ts`, that the job calls — don't inline the logic into the Trigger.dev task itself.
-
-Flag explicitly in `progress-tracker.md`: this spec is intentionally a placeholder mechanism ahead of its real data dependency (`17-budget-categories-entries.md`). Don't let this read as "overspend detection is done" — the plumbing is done, the real signal isn't wired yet.
+Structure the job so this comparison is isolated in one function, `lib/compute-overspend-status.ts`, that the job calls — don't inline the logic into the Trigger.dev task itself.
 
 ## Trigger.dev Setup
 
@@ -25,7 +23,6 @@ Add a simple "Overspend Flags" section to the existing `/union/applications` pag
 
 ## Scope Limits
 
-- don't build real expense tracking — that's `17`, this spec explicitly can't do real overspend detection without it
 - don't add email/notification delivery for flags — visual dashboard surfacing only
 - don't over-build the scheduling — daily, simple, no configurable schedule UI
 
@@ -36,5 +33,4 @@ Add a simple "Overspend Flags" section to the existing `/union/applications` pag
 - `computeOverspendStatus` is isolated in its own file, not inlined in the task
 - flags surface in the union dashboard with a working "Mark resolved" action
 - re-running the job doesn't create duplicate flags for the same club
-- `progress-tracker.md` clearly notes this is placeholder logic pending `17`
 - `npm run build` passes

@@ -23,8 +23,7 @@ Three tabs (shadcn `Tabs`), one per form type. Each tab shows:
 - the current ordered list of fields for that form type, each row showing label, type, and a required badge
 - drag-to-reorder (or up/down buttons if drag adds too much complexity for this unit — either is fine)
 - an "Add field" button opening a `Dialog` with: label, field type (`Select`: Short text, Long text, Number, Yes/No, Single select, Date, File upload), required toggle, options list (only shown/editable when type is Single select), optional help text
- - an "Add field" button opening a `Dialog` with: label, field type (`Select`: Short text, Long text, Number, Yes/No, Single select, Date, File upload), required toggle, options list (only shown/editable when type is Single select), optional help text
-	 - FILE fields: the UI must disable the `required` toggle for `File upload` fields (upload handling is not yet supported). If a field's type is changed to `File upload`, the builder should clear any existing `required` flag for that field.
+  - FILE fields: the UI must disable the `required` toggle for `File upload` fields (upload handling is not yet supported). If a field's type is changed to `File upload`, the builder should clear any existing `required` flag for that field. This normalization isn't limited to the type-change moment in the dialog — any field whose type is `File upload` must have `required` cleared whenever a schema is loaded or saved, so existing schemas (seeded defaults, ones edited via direct API request) can't retain a required File field either.
 - click a field row to edit it in the same dialog, prefilled
 - a delete action per field, with a simple confirm (destructive-styled button, no need for a separate confirmation dialog for this unit)
 - a "Save changes" action that persists the full ordered field list back to `FormSchema.fields`

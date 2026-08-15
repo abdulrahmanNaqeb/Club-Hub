@@ -32,6 +32,8 @@ On submit:
  - create the `ClubApplication` row: institution relation, status `PENDING`, `answers`, `schemaSnapshot`, `proposedAdminEmail`, and `proposedAdmin`
 - redirect to a simple confirmation screen: "Application submitted — you'll hear back once [institution name]'s union reviews it." No queue-viewing for the applicant yet — that's a union-side concern, later spec.
 
+Security follow-up now implemented: the submitting Clerk user is stored separately from the proposed admin. If the proposed-admin email is already verified on the submitter's Clerk account, ownership is confirmed immediately. Otherwise, a 48-hour confirmation link is sent through the background email pipeline; the recipient must sign in with a Clerk account that has that exact email verified. Union approval remains disabled and the approve API returns 409 until ownership is confirmed.
+
 ## API
 
 `POST /api/institutions/[institutionSlug]/applications` — validates, creates the `ClubApplication`. Returns 404 if the institution doesn't exist, 400 on validation failure.
