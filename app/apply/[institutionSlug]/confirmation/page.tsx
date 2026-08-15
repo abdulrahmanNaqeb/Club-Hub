@@ -9,7 +9,7 @@ export default async function ApplyConfirmationPage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-page px-6">
       <div className="max-w-md text-center">
-        <h1 className="mb-2 font-heading text-lg font-medium text-copy-primary">
+        <h1 className="mb-2 font-heading text-3xl font-medium text-copy-primary">
           Application submitted
         </h1>
         <p className="text-sm text-copy-secondary">

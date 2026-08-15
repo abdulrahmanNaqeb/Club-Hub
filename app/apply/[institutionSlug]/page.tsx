@@ -24,7 +24,7 @@ export default async function ApplyPage({
   return (
     <div className="min-h-screen bg-page p-6">
       <div className="mx-auto max-w-xl">
-        <h1 className="mb-1 font-heading text-lg font-medium text-copy-primary">
+        <h1 className="mb-1 font-heading text-3xl font-medium text-copy-primary">
           Apply to start a club at {institution.name}
         </h1>
         <p className="mb-6 text-sm text-copy-secondary">

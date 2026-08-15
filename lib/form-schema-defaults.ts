@@ -25,8 +25,26 @@ export interface FormField {
 // lib/get-proposed-admin-email.ts).
 export const PROPOSED_ADMIN_EMAIL_FIELD_KEY = "proposedAdminEmail";
 
+// Reserved: the club application queue reads this key out of `answers` to
+// show a club name in the list without joining back to the schema, and the
+// approve route uses the same value to set both the new Clerk org's name
+// and Club.name (one source of truth for the club's display name at
+// creation time). This is a required field that must always be present in
+// CLUB_APPLICATION schemas. If a union deletes this field, the approval
+// flow will fail when attempting to create the Club (no fallback to
+// placeholder labels).
+export const CLUB_NAME_FIELD_KEY = "club_name";
+
+// Reserved: event approval requires a title for the Event it creates on
+// approval. This is a required field that must always be present in
+// EVENT_APPROVAL schemas. Unlike CLUB_NAME_FIELD_KEY with a fallback admin
+// email, there is no alternative source of truth for an event title. If a
+// union deletes this field, the approval flow will fail when attempting to
+// set Event.title (no fallback to placeholder title).
+export const EVENT_NAME_FIELD_KEY = "eventName";
+
 const CLUB_APPLICATION_DEFAULTS: FormField[] = [
-  { fieldKey: "club_name", label: "Club name", type: "TEXT", required: true },
+  { fieldKey: CLUB_NAME_FIELD_KEY, label: "Club name", type: "TEXT", required: true },
   {
     fieldKey: "description",
     label: "Description",
@@ -61,7 +79,7 @@ const CLUB_APPLICATION_DEFAULTS: FormField[] = [
 ];
 
 const EVENT_APPROVAL_DEFAULTS: FormField[] = [
-  { fieldKey: "event_name", label: "Event name", type: "TEXT", required: true },
+  { fieldKey: EVENT_NAME_FIELD_KEY, label: "Event name", type: "TEXT", required: true },
   { fieldKey: "date", label: "Date", type: "DATE", required: true },
   { fieldKey: "location", label: "Location", type: "TEXT", required: true },
   {
@@ -90,8 +108,17 @@ const EVENT_APPROVAL_DEFAULTS: FormField[] = [
   },
 ];
 
+// Reserved: funding requests store the requested amount as its own Decimal
+// column (`FundingRequest.amount`), pulled from this key rather than living
+// only inside `answers`/`schemaSnapshot`, so approval can add it straight to
+// Club.baselineBudgetAmount without re-parsing form answers. This is a
+// required field that must always be present in FUNDING_REQUEST schemas.
+// Unlike CLUB_NAME_FIELD_KEY, there is no fallback — if a union deletes this
+// field, submission fails outright rather than guessing an amount.
+export const FUNDING_AMOUNT_FIELD_KEY = "amount";
+
 const FUNDING_REQUEST_DEFAULTS: FormField[] = [
-  { fieldKey: "amount", label: "Amount", type: "NUMBER", required: true },
+  { fieldKey: FUNDING_AMOUNT_FIELD_KEY, label: "Amount", type: "NUMBER", required: true },
   { fieldKey: "reason", label: "Reason", type: "TEXTAREA", required: true },
 ];
 
@@ -120,19 +147,95 @@ export async function getOrSeedFormSchema(
   institution: Institution,
   formType: FormType
 ) {
-  const existing = await prisma.formSchema.findUnique({
+  const defaultFields = getDefaultFields(formType);
+
+  // Ensure a schema exists (create if missing)
+  const schema = await prisma.formSchema.upsert({
     where: { institutionId_formType: { institutionId: institution.id, formType } },
-  });
-
-  if (existing) {
-    return existing;
-  }
-
-  return prisma.formSchema.create({
-    data: {
+    create: {
       institutionId: institution.id,
       formType,
-      fields: getDefaultFields(formType) as unknown as object,
+      fields: defaultFields as unknown as object,
     },
+    update: {},
   });
+
+  // Normalize only the reserved keys in existing schemas. This preserves
+  // any custom fields a union added while ensuring required reserved
+  // fields (and their types) are present and valid.
+  const fields = schema.fields as unknown as FormField[];
+  let changed = false;
+
+  // Helper to ensure a default field exists with required type/required flag
+  function ensureReserved(def: FormField) {
+    const idx = fields.findIndex((f) => f.fieldKey === def.fieldKey);
+    if (idx === -1) {
+      // missing -> insert at the front to keep defaults discoverable
+      fields.unshift(def);
+      changed = true;
+      return;
+    }
+
+    const existing = fields[idx];
+    // If the reserved key exists but the type/required don't match the
+    // canonical defaults, normalize them.
+    if (existing.type !== def.type || existing.required !== def.required) {
+      fields[idx] = { ...existing, type: def.type, required: def.required, label: def.label };
+      changed = true;
+    }
+  }
+
+  for (const def of defaultFields) {
+    // Only normalize the reserved fields we care about. For FUNDING_REQUEST
+    // we need to ensure `amount` is NUMBER and required.
+    if (formType === "FUNDING_REQUEST") {
+      if (def.fieldKey === FUNDING_AMOUNT_FIELD_KEY) ensureReserved(def);
+      continue;
+    }
+
+    if (formType === "CLUB_APPLICATION") {
+      if (def.fieldKey === CLUB_NAME_FIELD_KEY) ensureReserved(def);
+      continue;
+    }
+
+    if (formType === "EVENT_APPROVAL") {
+      if (def.fieldKey !== EVENT_NAME_FIELD_KEY) {
+        continue;
+      }
+
+      const legacyFieldKey = "event_name"
+      const legacyIndex = fields.findIndex((f) => f.fieldKey === legacyFieldKey)
+      const canonicalIndex = fields.findIndex((f) => f.fieldKey === EVENT_NAME_FIELD_KEY)
+
+      if (legacyIndex !== -1) {
+        if (canonicalIndex === -1) {
+          const legacy = fields[legacyIndex]
+          fields[legacyIndex] = {
+            ...legacy,
+            fieldKey: EVENT_NAME_FIELD_KEY,
+            type: def.type,
+            required: def.required,
+            label: def.label,
+          }
+          changed = true
+        } else {
+          fields.splice(legacyIndex, 1)
+          changed = true
+        }
+      }
+
+      ensureReserved(def)
+      continue;
+    }
+  }
+
+  if (changed) {
+    const updated = await prisma.formSchema.update({
+      where: { id: schema.id },
+      data: { fields: fields as unknown as object },
+    });
+    return updated;
+  }
+
+  return schema;
 }

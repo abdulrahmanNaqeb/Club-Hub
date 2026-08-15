@@ -19,6 +19,7 @@ model EventApprovalRequest {
 model FundingRequest {
   id             String         @id @default(cuid())
   amount         Decimal
+  idempotencyKey String?
   answers        Json
   schemaSnapshot Json
   status         ApprovalStatus @default(PENDING)
@@ -30,4 +31,5 @@ model FundingRequest {
 
   @@index([clubId])
   @@index([clubId, status])
+  @@unique([clubId, idempotencyKey])
 }
